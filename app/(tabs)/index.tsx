@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, useColorScheme } from 'react-native';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
@@ -46,7 +46,10 @@ export default function HomeScreen() {
 
   // --- NEU: Hilfsfunktion, um das Datum als String zu formatieren (z.B. "2026-03-01") ---
   const getFormattedDate = (date) => {
-    return date.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   // --- ANGEPASST: Wird immer ausgeführt, wenn sich 'currentDate' ändert ---
@@ -352,7 +355,7 @@ export default function HomeScreen() {
           style={[styles.nutrientInput, isDark && { color: '#fff', borderColor: '#555' }]}
           value={value}
           onChangeText={setter}
-          keyboardType="numeric"
+          keyboardType="decimal-pad"
           placeholder="0"
           placeholderTextColor={isDark ? '#666' : '#ccc'}
         />
@@ -427,7 +430,8 @@ export default function HomeScreen() {
         onRequestClose={() => setShowAddModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, isDark && { backgroundColor: '#1e1e1e' }]}>
+          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={[styles.modalContent, isDark && { backgroundColor: '#1e1e1e' }]}>
+            <View style={{ width: '100%', alignItems: 'center' }}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, isDark && { color: '#fff' }]}>Nährwerte bearbeiten</Text>
               <TouchableOpacity onPress={resetForm} style={styles.closeModalButton}>
@@ -458,11 +462,12 @@ export default function HomeScreen() {
             <TouchableOpacity style={styles.button} onPress={addMeal}>
               <Text style={styles.buttonText}>Hinzufügen</Text>
             </TouchableOpacity>
-          </View>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
-      {/* --- NEU: Datums-Navigation --- */}
+      {/* Datums-Navigation */}
       <View style={[styles.dateNavContainer, isDark && { backgroundColor: '#1e1e1e', borderColor: '#333' }]}>
         <TouchableOpacity style={[styles.dateButton, isDark && { backgroundColor: '#333' }]} onPress={() => changeDay(-1)}>
           <Text style={[styles.dateButtonText, isDark && { color: '#fff' }]}>{'<'}</Text>
@@ -536,7 +541,7 @@ export default function HomeScreen() {
           <Text style={styles.scanButtonText}>📷 Barcode scannen</Text>
         </TouchableOpacity>
 
-        {/* --- NEU: Manuelle Barcode-Eingabe --- */}
+        {/* Manuelle Barcode-Eingabe */}
         <View style={styles.barcodeRow}>
           <TextInput
             style={[styles.input, { flex: 1, marginBottom: 0 }, isDark && { backgroundColor: '#2c2c2c', color: '#fff', borderColor: '#444' }]}
@@ -561,7 +566,7 @@ export default function HomeScreen() {
           style={[styles.input, isDark && { backgroundColor: '#2c2c2c', color: '#fff', borderColor: '#444' }]}
           placeholderTextColor={isDark ? '#888' : '#999'}
           placeholder="Kalorien"
-          keyboardType="numeric"
+          keyboardType="decimal-pad"
           value={calories}
           onChangeText={setCalories}
         />
@@ -583,7 +588,7 @@ export default function HomeScreen() {
             <View style={styles.mealTextContainer}>
               <Text style={[styles.mealName, isDark && { color: '#fff' }]}>{item.name}</Text>
               <Text style={[styles.mealCal, isDark && { color: '#ccc' }]}>{item.cal} kcal</Text>
-              {/* --- NEU: Anzeige der Nährwerte falls vorhanden --- */}
+              {/*  Anzeige der Nährwerte falls vorhanden */}
               {(item.protein > 0 || item.carbs > 0 || item.fat > 0) && (
                 <Text style={styles.macroText}>
                   P: {Math.round(item.protein)}g • K: {Math.round(item.carbs)}g • F: {Math.round(item.fat)}g

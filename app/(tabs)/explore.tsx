@@ -24,7 +24,9 @@ export default function TabTwoScreen() {
       // Wir nehmen hier vereinfacht immer das heutige Datum für die Bilanz,
       // oder man könnte das Datum aus dem Context holen.
       // Hier laden wir "Heute" als Standard.
-      const dateString = new Date().toISOString().split('T')[0];
+      const now = new Date();
+      const dateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      
       const storageKey = `@meals_${dateString}`;
       const savedMeals = await AsyncStorage.getItem(storageKey);
       
@@ -34,7 +36,7 @@ export default function TabTwoScreen() {
         setMeals([]);
       }
 
-      // NEU: Wasser laden
+      // Wasser laden
       const waterKey = `@water_${dateString}`;
       const savedWater = await AsyncStorage.getItem(waterKey);
       setWater(savedWater ? parseInt(savedWater) : 0);
@@ -64,11 +66,13 @@ export default function TabTwoScreen() {
 
   const screenWidth = Dimensions.get("window").width;
 
-  // NEU: Wasser ändern und speichern
+  // Wasser ändern und speichern
   const updateWater = async (change) => {
     const newWater = Math.max(0, water + change);
     setWater(newWater);
-    const dateString = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const dateString = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    
     try {
       await AsyncStorage.setItem(`@water_${dateString}`, newWater.toString());
     } catch (e) {
@@ -136,76 +140,72 @@ export default function TabTwoScreen() {
         </View>
       )}
 
-      {/* NEU: Zwei-Spalten-Layout für Wasser (Links) und Details (Rechts) */}
-      <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+      {/* Details Section (Volle Breite) */}
+      <View style={[styles.section, isDark && { backgroundColor: '#1e1e1e' }, { marginBottom: 20 }]}>
+        <Text style={[styles.sectionTitle, isDark && { color: '#fff', borderBottomColor: '#333' }]}>Details</Text>
         
-        {/* Linke Spalte: Wasser-Tracker */}
-        <View style={[styles.section, isDark && { backgroundColor: '#1e1e1e' }, { flex: 0.8, marginBottom: 0, alignItems: 'center', justifyContent: 'space-between' }]}>
-          <Text style={[styles.sectionTitle, isDark && { color: '#fff', borderBottomColor: '#333' }, { width: '100%', textAlign: 'center', fontSize: 18 }]}>Wasser</Text>
-          
-          <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 10 }}>
-            <ProgressChart
-              data={{ data: [Math.min(1, (water * 0.25) / 2.5)] }} // Ziel: 2.5 Liter
-              width={120}
-              height={120}
-              strokeWidth={10}
-              radius={40}
-              chartConfig={{
-                backgroundGradientFrom: isDark ? "#1e1e1e" : "#fff",
-                backgroundGradientTo: isDark ? "#1e1e1e" : "#fff",
-                backgroundGradientFromOpacity: 0,
-                backgroundGradientToOpacity: 0,
-                color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`, // Blau
-              }}
-              hideLegend={true}
-            />
-            <View style={{ position: 'absolute', alignItems: 'center' }}>
-               <Text style={[styles.bigNumber, isDark && { color: '#fff' }, { fontSize: 22 }]}>{(water * 0.25).toFixed(2)} L</Text>
-               <Text style={[styles.unit, { fontSize: 12 }]}>von 2.5 L</Text>
-            </View>
-          </View>
+        <View style={styles.statBlock}>
+          <StatRow label="Fett" value={totalFat} color="#d9534f" />
+          <StatRow label="davon gesättigte Fettsäuren" value={totalSatFat} isSub />
+        </View>
 
-          <View style={{ flexDirection: 'row', gap: 15 }}>
-            <TouchableOpacity onPress={() => updateWater(-1)} style={[styles.waterButton, { backgroundColor: '#d9534f' }]}>
-              <Text style={styles.waterButtonText}>-</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => updateWater(1)} style={[styles.waterButton, { backgroundColor: '#5cb85c' }]}>
-              <Text style={styles.waterButtonText}>+</Text>
-            </TouchableOpacity>
+        <View style={styles.statBlock}>
+          <StatRow label="Kohlenhydrate" value={totalCarbs} color="#f0ad4e" />
+          <StatRow label="davon Zucker" value={totalSugar} isSub />
+          <StatRow label="Ballaststoffe" value={totalFiber} isSub />
+        </View>
+
+        <View style={styles.statBlock}>
+          <StatRow label="Protein (Eiweiß)" value={totalProtein} color="#5cb85c" />
+        </View>
+
+        <View style={styles.statBlock}>
+          <StatRow label="Salz" value={totalSalt} color="#5bc0de" />
+          <StatRow label="Natrium" value={totalSodium} isSub />
+        </View>
+
+        <View style={styles.statBlock}>
+          <Text style={[styles.label, { marginBottom: 5, color: isDark ? '#4d00dd' : '#333' }]}>Mikronährstoffe (mg)</Text>
+          <StatRow label="Vitamin C" value={totalVitaminC * 1000} unit="" isSub />
+          <StatRow label="Eisen" value={totalIron * 1000} unit="" isSub />
+          <StatRow label="Magnesium" value={totalMagnesium * 1000} unit="" isSub />
+          <StatRow label="Zink" value={totalZinc * 1000} unit="" isSub />
+        </View>
+      </View>
+
+      {/* Wasser Section (Volle Breite, unter Details) */}
+      <View style={[styles.section, isDark && { backgroundColor: '#1e1e1e' }, { marginBottom: 20, alignItems: 'center' }]}>
+        <Text style={[styles.sectionTitle, isDark && { color: '#fff', borderBottomColor: '#333' }, { width: '100%', textAlign: 'center' }]}>Wasser</Text>
+        
+        <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 10 }}>
+          <ProgressChart
+            data={{ data: [Math.min(1, (water * 0.25) / 2.5)] }} // Ziel: 2.5 Liter
+            width={120}
+            height={120}
+            strokeWidth={10}
+            radius={40}
+            chartConfig={{
+              backgroundGradientFrom: isDark ? "#1e1e1e" : "#fff",
+              backgroundGradientTo: isDark ? "#1e1e1e" : "#fff",
+              backgroundGradientFromOpacity: 0,
+              backgroundGradientToOpacity: 0,
+              color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`, // Blau
+            }}
+            hideLegend={true}
+          />
+          <View style={{ position: 'absolute', alignItems: 'center' }}>
+              <Text style={[styles.bigNumber, isDark && { color: '#fff' }, { fontSize: 22 }]}>{(water * 0.25).toFixed(2)} L</Text>
+              <Text style={[styles.unit, { fontSize: 12 }]}>von 2.5 L</Text>
           </View>
         </View>
 
-        {/* Rechte Spalte: Makronährstoffe & Details (Komprimiert) */}
-        <View style={[styles.section, isDark && { backgroundColor: '#1e1e1e' }, { flex: 1.2, marginBottom: 0, paddingHorizontal: 10 }]}>
-          <Text style={[styles.sectionTitle, isDark && { color: '#fff', borderBottomColor: '#333' }, { fontSize: 18 }]}>Details</Text>
-          
-          <View style={styles.statBlock}>
-            <StatRow label="Fett" value={totalFat} color="#d9534f" />
-            <StatRow label="gesättigt" value={totalSatFat} isSub />
-          </View>
-
-          <View style={styles.statBlock}>
-            <StatRow label="Kohlenh." value={totalCarbs} color="#f0ad4e" />
-            <StatRow label="Zucker" value={totalSugar} isSub />
-            <StatRow label="Ballastst." value={totalFiber} isSub />
-          </View>
-
-          <View style={styles.statBlock}>
-            <StatRow label="Protein" value={totalProtein} color="#5cb85c" />
-          </View>
-
-          <View style={styles.statBlock}>
-            <StatRow label="Salz" value={totalSalt} color="#5bc0de" />
-            <StatRow label="Natrium" value={totalSodium} isSub />
-          </View>
-
-          <View style={styles.statBlock}>
-            <Text style={[styles.label, { marginBottom: 5, color: isDark ? '#4d00dd' : '#333', fontSize: 14 }]}>Mikros (mg)</Text>
-            <StatRow label="Vit C" value={totalVitaminC * 1000} unit="" isSub />
-            <StatRow label="Eisen" value={totalIron * 1000} unit="" isSub />
-            <StatRow label="Magnes." value={totalMagnesium * 1000} unit="" isSub />
-            <StatRow label="Zink" value={totalZinc * 1000} unit="" isSub />
-          </View>
+        <View style={{ flexDirection: 'row', gap: 15 }}>
+          <TouchableOpacity onPress={() => updateWater(-1)} style={[styles.waterButton, { backgroundColor: '#d9534f' }]}>
+            <Text style={styles.waterButtonText}>-</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => updateWater(1)} style={[styles.waterButton, { backgroundColor: '#5cb85c' }]}>
+            <Text style={styles.waterButtonText}>+</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
